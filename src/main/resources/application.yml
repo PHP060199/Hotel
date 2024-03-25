@@ -1,1 +1,7 @@
-spring.application.name=HotelManager
+spring:
+  application:
+    name: HotelManager
+  datasource:
+    url: jdbc:mysql://localhost:3306/hotel_manager
+    username: root
+    password: root
