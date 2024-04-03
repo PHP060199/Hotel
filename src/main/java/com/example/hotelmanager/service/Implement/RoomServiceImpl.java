@@ -1,28 +1,23 @@
 package com.example.hotelmanager.service.Implement;
 
-import com.example.hotelmanager.Domain.BookedRoom;
+import com.example.hotelmanager.DTO.RoomDTO;
 import com.example.hotelmanager.Domain.Room;
 import com.example.hotelmanager.exception.InternalServerException;
 import com.example.hotelmanager.exception.InvalidBookingRequestException;
 import com.example.hotelmanager.exception.NotFoundException;
-import com.example.hotelmanager.exception.PhotoRetrievalException;
+import com.example.hotelmanager.mapstruct.RoomMapper;
 import com.example.hotelmanager.repository.RoomRepository;
-import com.example.hotelmanager.response.BookingResponse;
-import com.example.hotelmanager.response.RoomResponse;
 import com.example.hotelmanager.service.BookingService;
 import com.example.hotelmanager.service.RoomService;
 import lombok.RequiredArgsConstructor;
-import org.apache.tomcat.util.codec.binary.Base64;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
-
 import javax.sql.rowset.serial.SerialBlob;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.Blob;
 import java.sql.SQLException;
 import java.time.LocalDate;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -32,8 +27,9 @@ public class RoomServiceImpl implements RoomService {
 
     private final RoomRepository roomRepository;
     private final BookingService bookingService;
+    private final RoomMapper roomMapper;
     @Override
-    public Room addNewRoom(MultipartFile photo, String roomType, BigDecimal roomPrice) throws SQLException, IOException {
+    public RoomDTO addNewRoom(MultipartFile photo, String roomType, BigDecimal roomPrice) throws SQLException, IOException {
         Room room = new Room();
         room.setRoomType(roomType);
         room.setRoomPrice(roomPrice);
@@ -42,7 +38,8 @@ public class RoomServiceImpl implements RoomService {
             Blob photoBlob = new SerialBlob(photoBytes);
             room.setPhoto(photoBlob);
         }
-        return roomRepository.save(room);
+        roomRepository.save(room);
+        return roomMapper.toDto(room);
     }
 
     @Override
@@ -51,22 +48,15 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
-    public List<RoomResponse> getAllRooms() throws SQLException {
+    public List<RoomDTO> getAllRooms() {
         List<Room> roomList = roomRepository.findAll();
-        List<RoomResponse> roomResponseList = new ArrayList<>();
-        for (Room room : roomList) {
-            byte[] photoBytes = getRoomPhotoByRoomId(room.getId());
-            if (photoBytes != null && photoBytes.length > 0) {
-                String base64Photo = Base64.encodeBase64String(photoBytes);
-                RoomResponse roomResponse = getRoomResponse(room);
-                roomResponse.setPhoto(base64Photo);
-                roomResponseList.add(roomResponse);
-            }
-        }
-        return roomResponseList;
+        List<RoomDTO> roomDTOList = roomList
+                .stream()
+                .map(roomMapper::toDto)
+                .toList();
+        roomDTOList.forEach(roomDTO -> roomDTO.setBookingDTOList(bookingService.getAllBookingsByRoomId(roomDTO.getId())));
+        return roomDTOList;
     }
-
-
 
     @Override
     public void deleteRoom(Long roomId) {
@@ -78,15 +68,14 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
-    public RoomResponse updateRoom(Long roomId, String roomType, BigDecimal roomPrice, MultipartFile photo) throws IOException, SQLException {
+    public RoomDTO updateRoom(Long roomId, String roomType, BigDecimal roomPrice, MultipartFile photo) throws IOException, SQLException {
         Optional<Room> checkRoom = roomRepository.findById(roomId);
         if (checkRoom.isEmpty()) {
             throw new NotFoundException(" Room not found!");
         }
-        if (checkRoom.get().isBooked()) {
+        if (checkRoom.get().getIsBooked()) {
             throw new InvalidBookingRequestException("Room is booked, not update");
         }
-
         byte[] photoBytes;
         if (photo != null && !photo.isEmpty()) {
             photoBytes = photo.getBytes();
@@ -103,54 +92,29 @@ public class RoomServiceImpl implements RoomService {
             }
         }
         roomRepository.save(checkRoom.get());
-        return getRoomResponse(checkRoom.get());
+        return roomMapper.toDto(checkRoom.get());
     }
 
     @Override
-    public RoomResponse getRoomById(Long roomId) {
+    public RoomDTO getRoomById(Long roomId) {
         Optional<Room> room = roomRepository.findById(roomId);
         if (room.isEmpty()) {
             throw new NotFoundException("Room not found!");
         }
-        return getRoomResponse(room.get());
+        return roomMapper.toDto(room.get());
     }
 
     @Override
-    public List<RoomResponse> getAvailableRooms(LocalDate checkInDate, LocalDate checkOutDate, String roomType) throws SQLException {
+    public List<RoomDTO> getAvailableRooms(LocalDate checkInDate, LocalDate checkOutDate, String roomType) throws SQLException {
         List<Room> roomList = roomRepository.findAvailableRoomsByDatesAndType(checkInDate, checkOutDate, roomType);
-        List<RoomResponse> roomResponseList = new ArrayList<>();
-        for (Room room : roomList) {
-            byte[] photoBytes = getRoomPhotoByRoomId(room.getId());
-            if (photoBytes != null && photoBytes.length > 0) {
-                String photoBase64 = Base64.encodeBase64String(photoBytes);
-                RoomResponse roomResponse = getRoomResponse(room);
-                roomResponse.setPhoto(photoBase64);
-                roomResponseList.add(roomResponse);
-            }
-        }
-        return roomResponseList;
+        List<RoomDTO> roomDTOList = roomList
+                .stream()
+                .map(roomMapper::toDto)
+                .toList();
+        roomDTOList.forEach(roomDTO -> roomDTO.setBookingDTOList(bookingService.getAllBookingsByRoomId(roomDTO.getId())));
+        return roomDTOList;
     }
 
-    private RoomResponse getRoomResponse(Room room) {
-        List<BookedRoom> bookings =  bookingService.getAllBookingsByRoomId(room.getId());
-        List<BookingResponse> bookingInfo = bookings
-                .stream()
-                .map(booking -> new BookingResponse(booking.getBookingId(),
-                        booking.getCheckInDate(),
-                        booking.getCheckOutDate(), booking.getBookingConfirmationCode())).toList();
-        byte[] photoBytes = null;
-        Blob photoBlob = room.getPhoto();
-        if (photoBlob != null) {
-            try {
-                photoBytes = photoBlob.getBytes(1, (int) photoBlob.length());
-            } catch (SQLException e) {
-                throw new PhotoRetrievalException("Error retrieving photo");
-            }
-        }
-        return new RoomResponse(room.getId(),
-                room.getRoomType(), room.getRoomPrice(),
-                room.isBooked(), photoBytes, bookingInfo);
-    }
 
     private byte[] getRoomPhotoByRoomId(Long roomId) throws SQLException {
         Optional<Room> room = roomRepository.findById(roomId);

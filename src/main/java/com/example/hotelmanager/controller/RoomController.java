@@ -1,8 +1,6 @@
 package com.example.hotelmanager.controller;
 
-import com.example.hotelmanager.Domain.Room;
-import com.example.hotelmanager.repository.RoomRepository;
-import com.example.hotelmanager.response.RoomResponse;
+import com.example.hotelmanager.DTO.RoomDTO;
 import com.example.hotelmanager.service.RoomService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
@@ -24,14 +22,14 @@ public class RoomController {
     private final RoomService roomService;
 
     @PostMapping("/add/new-room")
-    public ResponseEntity<RoomResponse> addNewRoom(
+    public ResponseEntity<?> addNewRoom(
             @RequestParam("photo") MultipartFile photo,
             @RequestParam("roomType") String roomType,
             @RequestParam("roomPrice") BigDecimal roomPrice) throws SQLException, IOException {
-        Room newRoom = roomService.addNewRoom(photo, roomType, roomPrice);
-        RoomResponse response = new RoomResponse(newRoom.getId(), newRoom.getRoomType(),
-                newRoom.getRoomPrice());
-        return ResponseEntity.ok(response);
+        RoomDTO roomDTO = roomService.addNewRoom(photo, roomType, roomPrice);
+//        RoomResponse response = new RoomResponse(roomDTO.getId(), roomDTO.getRoomType(),
+//                roomDTO.getRoomPrice());
+        return ResponseEntity.ok(roomDTO);
     }
 
     @GetMapping("/room/types")
@@ -40,40 +38,40 @@ public class RoomController {
     }
 
     @GetMapping("/all-rooms")
-    public ResponseEntity<List<RoomResponse>> getAllRooms() throws SQLException {
-        List<RoomResponse> roomResponseList = roomService.getAllRooms();
+    public ResponseEntity<?> getAllRooms() throws SQLException {
+        List<RoomDTO> roomResponseList = roomService.getAllRooms();
         return ResponseEntity.ok(roomResponseList);
     }
 
     @DeleteMapping("/delete/room/{roomId}")
-    public ResponseEntity<Void> deleteRoom(@PathVariable Long roomId) {
+    public ResponseEntity<?> deleteRoom(@PathVariable Long roomId) {
         roomService.deleteRoom(roomId);
         return new ResponseEntity<>(HttpStatus.GONE);
     }
 
     @PutMapping("/update/{roomId}")
-    public ResponseEntity<RoomResponse> updateRoom(@PathVariable Long roomId,
+    public ResponseEntity<?> updateRoom(@PathVariable Long roomId,
                                                    @RequestParam(required = false) String roomType,
                                                    @RequestParam(required = false) BigDecimal roomPrice,
                                                    @RequestParam(required = false) MultipartFile photo) throws SQLException, IOException {
 
-        RoomResponse roomResponse = roomService.updateRoom(roomId, roomType, roomPrice, photo);
-        return ResponseEntity.ok(roomResponse);
+        RoomDTO roomDTO = roomService.updateRoom(roomId, roomType, roomPrice, photo);
+        return ResponseEntity.ok(roomDTO);
     }
 
     @GetMapping("/room/{roomId}")
-    public ResponseEntity<RoomResponse> getRoomById(@PathVariable Long roomId) {
-        RoomResponse roomResponse = roomService.getRoomById(roomId);
-        return ResponseEntity.ok(roomResponse);
+    public ResponseEntity<?> getRoomById(@PathVariable Long roomId) {
+        RoomDTO roomDTO = roomService.getRoomById(roomId);
+        return ResponseEntity.ok(roomDTO);
     }
 
     @GetMapping("/available-rooms")
-    public ResponseEntity<List<RoomResponse>> getAvailableRooms(
+    public ResponseEntity<List<?>> getAvailableRooms(
             @RequestParam("checkInDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkInDate,
             @RequestParam("checkOutDate") @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate checkOutDate,
             @RequestParam("roomType") String roomType) throws SQLException {
-        List<RoomResponse> roomResponseList = roomService.getAvailableRooms(checkInDate, checkOutDate, roomType);
-        return ResponseEntity.ok(roomResponseList);
+        List<RoomDTO> roomDTOList = roomService.getAvailableRooms(checkInDate, checkOutDate, roomType);
+        return ResponseEntity.ok(roomDTOList);
     }
 
 }

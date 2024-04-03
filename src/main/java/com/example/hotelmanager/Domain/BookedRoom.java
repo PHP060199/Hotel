@@ -39,7 +39,6 @@ public class BookedRoom {
     @Column(name = "total_guest")
     private int totalNumOfGuest;
 
-    @Setter
     @Column(name = "confirmation_code")
     private String bookingConfirmationCode;
 
