@@ -7,8 +7,10 @@ import java.util.List;
 public interface BookingService {
     void cancelBooking(Long bookingId);
     List<BookingDTO> getAllBookingsByRoomId(Long roomId);
-    String saveBooking(Long roomId, BookedRoom bookingRequest);
-    BookedRoom findByBookingConfirmationCode(String confirmationCode);
-    List<BookedRoom> getAllBookings();
-    List<BookedRoom> getBookingsByUserEmail(String email);
+    BookingDTO saveBooking(Long roomId, BookingDTO bookingRequest);
+    BookingDTO findByBookingConfirmationCode(String confirmationCode);
+
+    List<BookingDTO> getAllBookings();
+
+    List<BookingDTO> getBookingsByUserEmail(String email);
 }

@@ -31,13 +31,13 @@ public class BookedRoom {
     private String guestEmail;
 
     @Column(name = "adults")
-    private int NumOfAdults;
+    private Long numOfAdults;
 
     @Column(name = "children")
-    private int NumOfChildren;
+    private Long numOfChildren;
 
     @Column(name = "total_guest")
-    private int totalNumOfGuest;
+    private Long totalNumOfGuest;
 
     @Column(name = "confirmation_code")
     private String bookingConfirmationCode;
