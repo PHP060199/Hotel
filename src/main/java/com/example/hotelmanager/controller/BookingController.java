@@ -2,9 +2,9 @@ package com.example.hotelmanager.controller;
 
 import com.example.hotelmanager.DTO.BookingDTO;
 import com.example.hotelmanager.service.BookingService;
-import com.example.hotelmanager.service.RoomService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -16,6 +16,7 @@ public class BookingController {
     private final BookingService bookingService;
 
     @GetMapping("/all-bookings")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> getAllBookings(){
         List<BookingDTO> bookingDTOList = bookingService.getAllBookings();
         return ResponseEntity.ok(bookingDTOList);

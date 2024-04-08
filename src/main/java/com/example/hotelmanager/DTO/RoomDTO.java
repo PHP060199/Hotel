@@ -13,5 +13,4 @@ public class RoomDTO {
     private Boolean isBooked;
     private String photo;
     private List<BookingDTO> bookingDTOList = new ArrayList<>();
-
 }
