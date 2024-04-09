@@ -27,8 +27,6 @@ public class RoomController {
             @RequestParam("roomType") String roomType,
             @RequestParam("roomPrice") BigDecimal roomPrice) throws SQLException, IOException {
         RoomDTO roomDTO = roomService.addNewRoom(photo, roomType, roomPrice);
-//        RoomResponse response = new RoomResponse(roomDTO.getId(), roomDTO.getRoomType(),
-//                roomDTO.getRoomPrice());
         return ResponseEntity.ok(roomDTO);
     }
 
