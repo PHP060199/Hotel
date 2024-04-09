@@ -6,9 +6,9 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.sql.SQLException;
@@ -22,6 +22,7 @@ public class RoomController {
     private final RoomService roomService;
 
     @PostMapping("/add/new-room")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> addNewRoom(
             @RequestParam("photo") MultipartFile photo,
             @RequestParam("roomType") String roomType,
@@ -42,6 +43,7 @@ public class RoomController {
     }
 
     @DeleteMapping("/delete/room/{roomId}")
+    @PreAuthorize("hasRole('ROLE_ADMIN')")
     public ResponseEntity<?> deleteRoom(@PathVariable Long roomId) {
         roomService.deleteRoom(roomId);
         return new ResponseEntity<>(HttpStatus.GONE);
@@ -49,9 +51,9 @@ public class RoomController {
 
     @PutMapping("/update/{roomId}")
     public ResponseEntity<?> updateRoom(@PathVariable Long roomId,
-                                                   @RequestParam(required = false) String roomType,
-                                                   @RequestParam(required = false) BigDecimal roomPrice,
-                                                   @RequestParam(required = false) MultipartFile photo) throws SQLException, IOException {
+                                        @RequestParam(required = false) String roomType,
+                                        @RequestParam(required = false) BigDecimal roomPrice,
+                                        @RequestParam(required = false) MultipartFile photo) throws SQLException, IOException {
 
         RoomDTO roomDTO = roomService.updateRoom(roomId, roomType, roomPrice, photo);
         return ResponseEntity.ok(roomDTO);
